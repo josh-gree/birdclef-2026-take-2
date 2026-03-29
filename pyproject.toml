@@ -1,0 +1,29 @@
+[project]
+name = "birdclef-2026-take-2"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "josh-gree", email = "joshuadouglasgreenhalgh@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.4.4",
+    "pandas>=3.0.1",
+    "pyarrow>=23.0.1",
+    "soundfile>=0.13.1",
+    "wm",
+]
+
+[build-system]
+requires = ["uv_build>=0.10.9,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+wm = { git = "https://github.com/josh-gree/wm.git" }
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+    "pytest>=9.0.2",
+]

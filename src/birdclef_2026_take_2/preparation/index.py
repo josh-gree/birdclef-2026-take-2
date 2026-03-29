@@ -58,6 +58,8 @@ def build_soundscape_index(
         ``primary_label`` (e.g. ``soundscapes.labels``).
     sample_rate:
         Sample rate used to convert window times to sample offsets.
+        Assumed to be uniform across all files — i.e. ``sample_rate`` samples
+        occupies exactly one second everywhere in the memmap.
 
     Returns
     -------
@@ -65,6 +67,18 @@ def build_soundscape_index(
         Columns: ``filename``, ``offset_start``, ``offset_end``,
         ``primary_label``.  One row per labelled window; offsets are
         sample-level within the concatenated memmap.
+
+    Notes
+    -----
+    After the merge each row carries the file-level ``offset_start`` (where
+    that recording begins in the memmap).  The per-window offsets are then
+    derived as::
+
+        window_offset_start = file_offset_start + window_start_seconds * sample_rate
+        window_offset_end   = file_offset_start + window_end_seconds   * sample_rate
+
+    ``file_offset_start`` is captured before ``offset_start`` is overwritten,
+    so the arithmetic is unambiguous even though the column is reused.
     """
     merged = offsets.merge(labels, on="filename", how="inner")
     file_offset = merged["offset_start"]

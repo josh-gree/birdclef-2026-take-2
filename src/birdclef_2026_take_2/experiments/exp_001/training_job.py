@@ -29,10 +29,14 @@ class Exp001(Experiment):
 
     @staticmethod
     def run(config: "Exp001.Config", wandb_run, run_dir: Path) -> None:
+        import shutil
+
         data_dir = Path("/data")
-        memmap_path = data_dir / "train.npy"
         taxonomy_path = data_dir / "taxonomy.csv"
         index_path = data_dir / "train_index.parquet"
+
+        memmap_path = Path("/tmp/train.npy")
+        shutil.copy2(data_dir / "train.npy", memmap_path)
 
         checkpoints_dir = run_dir / "checkpoints"
         checkpoints_dir.mkdir(parents=True, exist_ok=True)

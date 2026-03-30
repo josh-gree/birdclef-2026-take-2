@@ -267,6 +267,7 @@ name = "birdclef-2026-take-2"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "modal" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "pyarrow" },
@@ -282,6 +283,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "modal", specifier = ">=1.4.0" },
     { name = "numpy", specifier = ">=2.4.4" },
     { name = "pandas", specifier = ">=3.0.1" },
     { name = "pyarrow", specifier = ">=23.0.1" },

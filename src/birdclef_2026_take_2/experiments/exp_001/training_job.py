@@ -26,6 +26,7 @@ class Exp001(Experiment):
         dropout: float = 0.3
         val_fraction: float = 0.2
         seed: int = 42
+        label_smoothing: float = 0.1
 
     @staticmethod
     def run(config: "Exp001.Config", wandb_run, run_dir: Path) -> None:
@@ -109,7 +110,7 @@ class Exp001(Experiment):
         wandb_run.define_metric("epoch_val_loss", step_metric="epoch")
         wandb_run.define_metric("epoch_val_acc", step_metric="epoch")
 
-        criterion = nn.CrossEntropyLoss()
+        criterion = nn.CrossEntropyLoss(label_smoothing=config.label_smoothing)
         batch_step = 0
 
         for epoch in range(config.epochs):

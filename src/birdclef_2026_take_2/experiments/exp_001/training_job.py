@@ -97,7 +97,7 @@ class Exp001(Experiment):
         model = EfficientNetMLP(num_classes, config.hidden_dim, config.dropout).to(device)
         spectrogram = build_spectrogram_pipeline().to(device)
 
-        optimizer = AdamW(model.head.parameters(), lr=config.lr)
+        optimizer = AdamW(model.parameters(), lr=config.lr)
         scheduler = CosineAnnealingLR(optimizer, T_max=config.epochs)
 
         wandb_run.define_metric("batch_step")

@@ -9,8 +9,6 @@ class EfficientNetMLP(nn.Module):
         backbone = timm.create_model(
             "efficientnet_b0", pretrained=True, in_chans=1, num_classes=0
         )
-        for p in backbone.parameters():
-            p.requires_grad_(False)
         self.backbone = backbone
         feat_dim = backbone.num_features
         self.head = nn.Sequential(

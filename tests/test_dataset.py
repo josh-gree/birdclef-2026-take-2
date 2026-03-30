@@ -69,7 +69,9 @@ def test_consecutive_audio_shape(consecutive_ds):
     for idx in range(len(consecutive_ds)):
         item = consecutive_ds[idx]
         assert item["audio"].shape == (WINDOW_SAMPLES,)
-        assert item["audio"].dtype == np.int16
+        assert item["audio"].dtype == np.float32
+        assert item["audio"].min() >= -1.0
+        assert item["audio"].max() <= 1.0
 
 
 def test_consecutive_labels_valid(prepared, consecutive_ds):
@@ -95,7 +97,9 @@ def test_random_audio_shape(random_ds):
     for idx in range(len(random_ds)):
         item = random_ds[idx]
         assert item["audio"].shape == (WINDOW_SAMPLES,)
-        assert item["audio"].dtype == np.int16
+        assert item["audio"].dtype == np.float32
+        assert item["audio"].min() >= -1.0
+        assert item["audio"].max() <= 1.0
 
 
 def test_random_reproducible_same_epoch(prepared):
@@ -135,7 +139,9 @@ def test_middle_audio_shape(middle_ds):
     for idx in range(len(middle_ds)):
         item = middle_ds[idx]
         assert item["audio"].shape == (WINDOW_SAMPLES,)
-        assert item["audio"].dtype == np.int16
+        assert item["audio"].dtype == np.float32
+        assert item["audio"].min() >= -1.0
+        assert item["audio"].max() <= 1.0
 
 
 def test_middle_deterministic(prepared):

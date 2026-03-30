@@ -128,6 +128,6 @@ class TrainClipDataset(Dataset):
             case _:
                 raise TypeError(f"Unknown window strategy: {type(self._strategy)}")
 
-        audio = self._memmap[sample_start : sample_start + WINDOW_SAMPLES]
+        audio = self._memmap[sample_start : sample_start + WINDOW_SAMPLES].astype(np.float32) / 32768.0
         label = self._label_map[self._index["primary_label"].iat[clip_idx]]
         return {"audio": audio, "label": label}

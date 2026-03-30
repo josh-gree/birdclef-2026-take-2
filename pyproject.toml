@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "modal>=1.4.0",
+    "nnaudio>=0.3.4",
     "numpy>=2.4.4",
     "pandas>=3.0.1",
     "pyarrow>=23.0.1",
@@ -27,5 +28,7 @@ wm = { git = "https://github.com/josh-gree/wm.git" }
 [dependency-groups]
 dev = [
     "jupyter>=1.1.1",
+    "kaggle>=2.0.0",
+    "matplotlib>=3.10.8",
     "pytest>=9.0.2",
 ]

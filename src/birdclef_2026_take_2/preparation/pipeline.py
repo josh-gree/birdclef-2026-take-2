@@ -1,6 +1,7 @@
 """End-to-end data preparation pipeline: zip → memmap + parquet indexes."""
 
 import logging
+import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -33,6 +34,7 @@ class PreparedDataset:
     train_index: Path
     soundscapes_memmap: Path
     soundscapes_index: Path
+    taxonomy: Path
 
 
 def prepare_dataset(zip_path: Path, output_dir: Path) -> PreparedDataset:
@@ -95,9 +97,15 @@ def prepare_dataset(zip_path: Path, output_dir: Path) -> PreparedDataset:
     soundscapes_index.to_parquet(soundscapes_index_path, index=False)
     log.info("Soundscapes index written → %s (%d rows)", soundscapes_index_path, len(soundscapes_index))
 
+    taxonomy_path = output_dir / "taxonomy.csv"
+    with zipfile.ZipFile(zip_path) as zf:
+        taxonomy_path.write_bytes(zf.read("taxonomy.csv"))
+    log.info("Taxonomy written → %s", taxonomy_path)
+
     return PreparedDataset(
         train_memmap=train_memmap_path,
         train_index=train_index_path,
         soundscapes_memmap=soundscapes_memmap_path,
         soundscapes_index=soundscapes_index_path,
+        taxonomy=taxonomy_path,
     )

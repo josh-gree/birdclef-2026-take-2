@@ -17,7 +17,7 @@ dependencies = [
     "pyarrow>=23.0.1",
     "soundfile>=0.13.1",
     "timm>=1.0.26",
-    "torch>=2.11.0",
+    "torch>=2.5.0",
     "wm",
 ]
 
@@ -35,6 +35,12 @@ build-backend = "uv_build"
 
 [tool.uv.sources]
 wm = { git = "https://github.com/josh-gree/wm.git" }
+torch = { index = "pytorch-cu124" }
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
 
 [dependency-groups]
 dev = [

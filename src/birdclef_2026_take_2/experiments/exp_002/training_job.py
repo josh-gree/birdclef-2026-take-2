@@ -97,7 +97,8 @@ class Exp002(Experiment):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         model = EfficientNetMLP(num_classes, config.hidden_dim, config.dropout, config.backbone_variant).to(device)
-        spectrogram = build_spectrogram_pipeline().to(device)
+        _, h, w = model.backbone.default_cfg['input_size']
+        spectrogram = build_spectrogram_pipeline(height=h, width=w).to(device)
 
         optimizer = AdamW(model.parameters(), lr=config.lr)
         scheduler = CosineAnnealingLR(optimizer, T_max=config.epochs)

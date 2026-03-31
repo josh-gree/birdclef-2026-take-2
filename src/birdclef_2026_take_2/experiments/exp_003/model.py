@@ -8,8 +8,8 @@ PERCH_EMBEDDING_DIM = 1536
 class PerchMLP(nn.Module):
     def __init__(self, onnx_path: str, num_classes: int, hidden_dim: int = 512, dropout: float = 0.3):
         super().__init__()
-        import torch  # must be imported before onnxruntime to expose CUDA libs globally
         import onnxruntime as ort
+        ort.preload_dlls()
         ort.set_default_logger_severity(3)
         providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
         self._session = ort.InferenceSession(onnx_path, providers=providers)

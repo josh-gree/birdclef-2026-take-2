@@ -35,7 +35,7 @@ build-backend = "uv_build"
 
 [tool.uv.sources]
 wm = { git = "https://github.com/josh-gree/wm.git" }
-torch = { index = "pytorch-cu124" }
+torch = { index = "pytorch-cu124", marker = "sys_platform == 'linux'" }
 
 [[tool.uv.index]]
 name = "pytorch-cu124"

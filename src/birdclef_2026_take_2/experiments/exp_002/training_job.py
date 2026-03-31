@@ -27,6 +27,7 @@ class Exp002(Experiment):
         val_fraction: float = 0.2
         seed: int = 42
         label_smoothing: float = 0.1
+        backbone_variant: str = "efficientnet_b0"
 
     @staticmethod
     def run(config: "Exp002.Config", wandb_run, run_dir: Path) -> None:
@@ -95,7 +96,7 @@ class Exp002(Experiment):
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        model = EfficientNetMLP(num_classes, config.hidden_dim, config.dropout).to(device)
+        model = EfficientNetMLP(num_classes, config.hidden_dim, config.dropout, config.backbone_variant).to(device)
         spectrogram = build_spectrogram_pipeline().to(device)
 
         optimizer = AdamW(model.parameters(), lr=config.lr)

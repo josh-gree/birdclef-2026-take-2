@@ -4,10 +4,10 @@ import torch.nn as nn
 
 
 class EfficientNetMLP(nn.Module):
-    def __init__(self, num_classes: int, hidden_dim: int = 512, dropout: float = 0.3):
+    def __init__(self, num_classes: int, hidden_dim: int = 512, dropout: float = 0.3, backbone_variant: str = "efficientnet_b0"):
         super().__init__()
         backbone = timm.create_model(
-            "efficientnet_b0", pretrained=True, in_chans=1, num_classes=0
+            backbone_variant, pretrained=True, in_chans=1, num_classes=0
         )
         self.backbone = backbone
         feat_dim = backbone.num_features

@@ -8,9 +8,11 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "huggingface-hub>=0.23.0",
     "modal>=1.4.0",
     "nnaudio>=0.3.4",
     "numpy>=2.4.4",
+    "onnxruntime-gpu>=1.19.0 ; sys_platform == 'linux'",
     "pandas>=3.0.1",
     "pyarrow>=23.0.1",
     "soundfile>=0.13.1",
@@ -39,5 +41,6 @@ dev = [
     "jupyter>=1.1.1",
     "kaggle>=2.0.0",
     "matplotlib>=3.10.8",
+    "onnxruntime>=1.24.4",
     "pytest>=9.0.2",
 ]

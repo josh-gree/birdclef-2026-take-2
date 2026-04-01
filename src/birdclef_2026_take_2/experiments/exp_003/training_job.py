@@ -112,7 +112,7 @@ class Exp003(Experiment):
             {label: idx for idx, label in enumerate(taxonomy["primary_label"])}
         )
         counts = np.bincount(label_col, minlength=num_classes).astype(np.float32)
-        class_weights = torch.tensor(1.0 / counts.clip(min=1), dtype=torch.float32).to(device)
+        class_weights = torch.tensor(1.0 / np.sqrt(counts.clip(min=1)), dtype=torch.float32).to(device)
         class_weights = class_weights / class_weights.sum() * num_classes
 
         optimizer = AdamW(model.parameters(), lr=config.lr)

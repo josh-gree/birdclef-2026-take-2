@@ -12,11 +12,11 @@ from torch.utils.data import DataLoader
 from wm import Experiment
 
 from birdclef_2026_take_2.dataset import MiddleWindow, RandomWindow, TrainClipDataset
-from birdclef_2026_take_2.experiments.exp_003.model import PerchMLP
+from birdclef_2026_take_2.experiments.exp_004.model import PerchSpatialAttention
 
 
-class Exp003(Experiment):
-    name = "exp_003"
+class Exp004(Experiment):
+    name = "exp_004"
 
     class Config(BaseModel):
         lr: float = 1e-3
@@ -29,10 +29,9 @@ class Exp003(Experiment):
         label_smoothing: float = 0.1
         onnx_variant: str = "perch_v2_no_dft"
         use_class_weights: bool = True
-        use_label_head: bool = False
 
     @staticmethod
-    def run(config: "Exp003.Config", wandb_run, run_dir: Path) -> None:
+    def run(config: "Exp004.Config", wandb_run, run_dir: Path) -> None:
         import shutil
         from huggingface_hub import hf_hub_download
 
@@ -104,12 +103,11 @@ class Exp003(Experiment):
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        model = PerchMLP(
+        model = PerchSpatialAttention(
             onnx_path=onnx_path,
             num_classes=num_classes,
             hidden_dim=config.hidden_dim,
             dropout=config.dropout,
-            use_label_head=config.use_label_head,
         ).to(device)
 
         label_col = train_index["primary_label"].map(

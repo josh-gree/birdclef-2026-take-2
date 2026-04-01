@@ -5,6 +5,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from pydantic import BaseModel
+from sklearn.metrics import f1_score
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
@@ -27,6 +28,7 @@ class Exp003(Experiment):
         seed: int = 42
         label_smoothing: float = 0.1
         onnx_variant: str = "perch_v2_no_dft"
+        use_class_weights: bool = True
 
     @staticmethod
     def run(config: "Exp003.Config", wandb_run, run_dir: Path) -> None:
@@ -126,8 +128,12 @@ class Exp003(Experiment):
         wandb_run.define_metric("epoch_train_acc", step_metric="epoch")
         wandb_run.define_metric("epoch_val_loss", step_metric="epoch")
         wandb_run.define_metric("epoch_val_acc", step_metric="epoch")
+        wandb_run.define_metric("epoch_val_macro_f1", step_metric="epoch")
 
-        criterion = nn.CrossEntropyLoss(label_smoothing=config.label_smoothing, weight=class_weights)
+        criterion = nn.CrossEntropyLoss(
+            label_smoothing=config.label_smoothing,
+            weight=class_weights if config.use_class_weights else None,
+        )
         batch_step = 0
 
         for epoch in range(config.epochs):
@@ -168,6 +174,8 @@ class Exp003(Experiment):
             val_loss = 0.0
             val_correct = 0
             val_total = 0
+            val_all_preds = []
+            val_all_labels = []
 
             with torch.no_grad():
                 for batch in val_loader:
@@ -179,15 +187,24 @@ class Exp003(Experiment):
                     val_loss += loss.item() * labels.size(0)
                     val_correct += (preds == labels).sum().item()
                     val_total += labels.size(0)
+                    val_all_preds.append(preds.cpu().numpy())
+                    val_all_labels.append(labels.cpu().numpy())
 
             val_loss /= val_total
             val_acc = val_correct / val_total
+            val_macro_f1 = f1_score(
+                np.concatenate(val_all_labels),
+                np.concatenate(val_all_preds),
+                average="macro",
+                zero_division=0,
+            )
 
             wandb_run.log({
                 "epoch_train_loss": train_loss,
                 "epoch_train_acc": train_acc,
                 "epoch_val_loss": val_loss,
                 "epoch_val_acc": val_acc,
+                "epoch_val_macro_f1": val_macro_f1,
                 "epoch": epoch,
             })
 

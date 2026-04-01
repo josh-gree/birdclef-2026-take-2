@@ -7,16 +7,18 @@ import torch.nn as nn
 from pydantic import BaseModel
 from sklearn.metrics import f1_score
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.optim.lr_scheduler import OneCycleLR
 from torch.utils.data import DataLoader
 from wm import Experiment
 
 from birdclef_2026_take_2.dataset import MiddleWindow, RandomWindow, TrainClipDataset
-from birdclef_2026_take_2.experiments.exp_003.model import PerchMLP
+from birdclef_2026_take_2.experiments.exp_006.augmentations import FreqMask, GaussianNoise, TimeMask
+from birdclef_2026_take_2.experiments.exp_006.model import EfficientNetSpatialAttention
+from birdclef_2026_take_2.transforms import build_spectrogram_pipeline
 
 
-class Exp003(Experiment):
-    name = "exp_003"
+class Exp006(Experiment):
+    name = "exp_006"
 
     class Config(BaseModel):
         lr: float = 1e-3
@@ -27,19 +29,14 @@ class Exp003(Experiment):
         val_fraction: float = 0.2
         seed: int = 42
         label_smoothing: float = 0.1
-        onnx_variant: str = "perch_v2_no_dft"
         use_class_weights: bool = True
-        use_label_head: bool = False
+        freq_mask_width: int = 30
+        time_mask_width: int = 30
+        noise_std: float = 0.01
 
     @staticmethod
-    def run(config: "Exp003.Config", wandb_run, run_dir: Path) -> None:
+    def run(config: "Exp006.Config", wandb_run, run_dir: Path) -> None:
         import shutil
-        from huggingface_hub import hf_hub_download
-
-        onnx_path = hf_hub_download(
-            repo_id="justinchuby/Perch-onnx",
-            filename=f"{config.onnx_variant}.onnx",
-        )
 
         data_dir = Path("/data")
         taxonomy_path = data_dir / "taxonomy.csv"
@@ -104,12 +101,18 @@ class Exp003(Experiment):
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        model = PerchMLP(
-            onnx_path=onnx_path,
+        spectrogram = build_spectrogram_pipeline().to(device)
+
+        augment = nn.Sequential(
+            FreqMask(max_width=config.freq_mask_width),
+            TimeMask(max_width=config.time_mask_width),
+            GaussianNoise(std=config.noise_std),
+        ).to(device)
+
+        model = EfficientNetSpatialAttention(
             num_classes=num_classes,
             hidden_dim=config.hidden_dim,
             dropout=config.dropout,
-            use_label_head=config.use_label_head,
         ).to(device)
 
         label_col = train_index["primary_label"].map(
@@ -120,7 +123,12 @@ class Exp003(Experiment):
         class_weights = class_weights / class_weights.sum() * num_classes
 
         optimizer = AdamW(model.parameters(), lr=config.lr)
-        scheduler = CosineAnnealingLR(optimizer, T_max=config.epochs)
+        scheduler = OneCycleLR(
+            optimizer,
+            max_lr=config.lr,
+            steps_per_epoch=len(train_loader),
+            epochs=config.epochs,
+        )
 
         wandb_run.define_metric("batch_step")
         wandb_run.define_metric("batch_loss", step_metric="batch_step")
@@ -150,12 +158,14 @@ class Exp003(Experiment):
                 audio = batch["audio"].to(device)
                 labels = batch["label"].to(device)
 
-                logits = model(audio)
+                specs = augment(spectrogram(audio))
+                logits = model(specs)
                 loss = criterion(logits, labels)
 
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                scheduler.step()
 
                 preds = logits.argmax(dim=1)
                 correct = (preds == labels).sum().item()
@@ -183,7 +193,8 @@ class Exp003(Experiment):
                 for batch in val_loader:
                     audio = batch["audio"].to(device)
                     labels = batch["label"].to(device)
-                    logits = model(audio)
+                    specs = spectrogram(audio)
+                    logits = model(specs)
                     loss = criterion(logits, labels)
                     preds = logits.argmax(dim=1)
                     val_loss += loss.item() * labels.size(0)
@@ -214,5 +225,3 @@ class Exp003(Experiment):
                 model.state_dict(),
                 checkpoints_dir / f"epoch_{epoch:03d}.pt",
             )
-
-            scheduler.step()

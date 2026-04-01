@@ -12,11 +12,12 @@ from torch.utils.data import DataLoader
 from wm import Experiment
 
 from birdclef_2026_take_2.dataset import MiddleWindow, RandomWindow, TrainClipDataset
-from birdclef_2026_take_2.experiments.exp_003.model import PerchMLP
+from birdclef_2026_take_2.experiments.exp_005.model import EfficientNetSpatialAttention
+from birdclef_2026_take_2.transforms import build_spectrogram_pipeline
 
 
-class Exp003(Experiment):
-    name = "exp_003"
+class Exp005(Experiment):
+    name = "exp_005"
 
     class Config(BaseModel):
         lr: float = 1e-3
@@ -27,19 +28,11 @@ class Exp003(Experiment):
         val_fraction: float = 0.2
         seed: int = 42
         label_smoothing: float = 0.1
-        onnx_variant: str = "perch_v2_no_dft"
         use_class_weights: bool = True
-        use_label_head: bool = False
 
     @staticmethod
-    def run(config: "Exp003.Config", wandb_run, run_dir: Path) -> None:
+    def run(config: "Exp005.Config", wandb_run, run_dir: Path) -> None:
         import shutil
-        from huggingface_hub import hf_hub_download
-
-        onnx_path = hf_hub_download(
-            repo_id="justinchuby/Perch-onnx",
-            filename=f"{config.onnx_variant}.onnx",
-        )
 
         data_dir = Path("/data")
         taxonomy_path = data_dir / "taxonomy.csv"
@@ -104,12 +97,12 @@ class Exp003(Experiment):
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        model = PerchMLP(
-            onnx_path=onnx_path,
+        spectrogram = build_spectrogram_pipeline().to(device)
+
+        model = EfficientNetSpatialAttention(
             num_classes=num_classes,
             hidden_dim=config.hidden_dim,
             dropout=config.dropout,
-            use_label_head=config.use_label_head,
         ).to(device)
 
         label_col = train_index["primary_label"].map(
@@ -150,7 +143,8 @@ class Exp003(Experiment):
                 audio = batch["audio"].to(device)
                 labels = batch["label"].to(device)
 
-                logits = model(audio)
+                specs = spectrogram(audio)
+                logits = model(specs)
                 loss = criterion(logits, labels)
 
                 optimizer.zero_grad()
@@ -183,7 +177,8 @@ class Exp003(Experiment):
                 for batch in val_loader:
                     audio = batch["audio"].to(device)
                     labels = batch["label"].to(device)
-                    logits = model(audio)
+                    specs = spectrogram(audio)
+                    logits = model(specs)
                     loss = criterion(logits, labels)
                     preds = logits.argmax(dim=1)
                     val_loss += loss.item() * labels.size(0)

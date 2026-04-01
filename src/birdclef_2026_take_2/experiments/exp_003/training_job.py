@@ -108,6 +108,13 @@ class Exp003(Experiment):
             dropout=config.dropout,
         ).to(device)
 
+        label_col = train_index["primary_label"].map(
+            {label: idx for idx, label in enumerate(taxonomy["primary_label"])}
+        )
+        counts = np.bincount(label_col, minlength=num_classes).astype(np.float32)
+        class_weights = torch.tensor(1.0 / counts.clip(min=1), dtype=torch.float32).to(device)
+        class_weights = class_weights / class_weights.sum() * num_classes
+
         optimizer = AdamW(model.parameters(), lr=config.lr)
         scheduler = CosineAnnealingLR(optimizer, T_max=config.epochs)
 
@@ -120,7 +127,7 @@ class Exp003(Experiment):
         wandb_run.define_metric("epoch_val_loss", step_metric="epoch")
         wandb_run.define_metric("epoch_val_acc", step_metric="epoch")
 
-        criterion = nn.CrossEntropyLoss(label_smoothing=config.label_smoothing)
+        criterion = nn.CrossEntropyLoss(label_smoothing=config.label_smoothing, weight=class_weights)
         batch_step = 0
 
         for epoch in range(config.epochs):

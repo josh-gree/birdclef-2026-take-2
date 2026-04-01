@@ -15,6 +15,7 @@ dependencies = [
     "onnxruntime-gpu>=1.19.0 ; sys_platform == 'linux'",
     "pandas>=3.0.1",
     "pyarrow>=23.0.1",
+    "scikit-learn>=1.8.0",
     "soundfile>=0.13.1",
     "timm>=1.0.26",
     "torch>=2.5.0",
@@ -28,6 +29,7 @@ wm = "birdclef_2026_take_2.app:cli"
 gpu = "T4"
 volume = "birdclef-2026-processed"
 data_mount = "/data"
+timeout = 21600
 
 [build-system]
 requires = ["uv_build>=0.10.9,<0.11.0"]

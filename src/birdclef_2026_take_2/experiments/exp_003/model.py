@@ -3,10 +3,11 @@ import torch.nn as nn
 
 
 PERCH_EMBEDDING_DIM = 1536
+PERCH_LABEL_DIM = 14795
 
 
 class PerchMLP(nn.Module):
-    def __init__(self, onnx_path: str, num_classes: int, hidden_dim: int = 512, dropout: float = 0.3):
+    def __init__(self, onnx_path: str, num_classes: int, hidden_dim: int = 512, dropout: float = 0.3, use_label_head: bool = False):
         super().__init__()
         import os
         import glob
@@ -30,9 +31,11 @@ class PerchMLP(nn.Module):
         output_names = [o.name for o in self._session.get_outputs()]
         assert "embedding" in output_names, f"Expected 'embedding' in {output_names}"
         self._input_name = self._session.get_inputs()[0].name
+        self._use_label_head = use_label_head
 
+        input_dim = PERCH_LABEL_DIM if use_label_head else PERCH_EMBEDDING_DIM
         self.head = nn.Sequential(
-            nn.Linear(PERCH_EMBEDDING_DIM, hidden_dim),
+            nn.Linear(input_dim, hidden_dim),
             nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(hidden_dim, num_classes),
@@ -40,5 +43,6 @@ class PerchMLP(nn.Module):
 
     def forward(self, waveforms: torch.Tensor) -> torch.Tensor:
         audio_np = waveforms.detach().cpu().numpy()
-        embeddings = self._session.run(["embedding"], {self._input_name: audio_np})[0]
-        return self.head(torch.from_numpy(embeddings).to(waveforms.device))
+        output_key = "label" if self._use_label_head else "embedding"
+        features = self._session.run([output_key], {self._input_name: audio_np})[0]
+        return self.head(torch.from_numpy(features).to(waveforms.device))
